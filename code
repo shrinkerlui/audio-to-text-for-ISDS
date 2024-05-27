@@ -1,0 +1,51 @@
+import whisper
+import ssl
+from datetime import timedelta
+import urllib.request
+
+# 忽略 SSL 证书验证
+ssl._create_default_https_context = ssl._create_unverified_context
+
+# 加载模型，选择 small 模型以平衡速度和准确性
+model = whisper.load_model("small")
+
+# 转录音频文件
+def transcribe_audio(file_path):
+    result = model.transcribe(file_path, task='transcribe')
+    return result
+
+# 将时间转换为 SRT 格式
+def format_timestamp(seconds):
+    td = timedelta(seconds=seconds)
+    return str(td)[:-3].replace(".", ",")
+
+# 保存为 SRT 文件
+def save_as_srt(segments, srt_path):
+    with open(srt_path, "w") as srt_file:
+        for i, segment in enumerate(segments):
+            start = format_timestamp(segment["start"])
+            end = format_timestamp(segment["end"])
+            text = segment["text"]
+            srt_file.write(f"{i + 1}\n{start} --> {end}\n{text}\n\n")
+
+# 保存为 TXT 文件
+def save_as_txt(transcription, txt_path):
+    with open(txt_path, "w") as txt_file:
+        txt_file.write(transcription)
+
+# 示例：处理 MP3 文件并保存结果
+audio_path = "/Users/jcharleslui/Downloads/140222，10-12.mp3" #在这里输入转录音频文件的路径
+desktop_path = "/Users/jcharleslui/Desktop"  # 确保替换为你的用户名
+srt_path = f"{desktop_path}/transcription.srt"
+txt_path = f"{desktop_path}/transcription.txt"
+
+# 转录音频
+result = transcribe_audio(audio_path)
+transcription = result["text"]
+segments = result["segments"]
+
+# 保存结果
+save_as_srt(segments, srt_path)
+save_as_txt(transcription, txt_path)
+
+print("Transcription saved as SRT and TXT on the Desktop.")
